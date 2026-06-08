@@ -9,13 +9,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
+    :root {
+      /* Matching background color for perfect bubble cutouts */
+      --bg-app: #f8fafc; 
+      --bubble-me: #4f46e5;
+      --bubble-other: #e2e8f0;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
       background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
       background-size: 20px 20px;
     }
     
-    /* Support for modern dynamic viewport heights to prevent mobile browser toolbar cropping */
+    /* Support for modern dynamic viewport heights */
     .h-dynamic-screen {
       height: 100vh;
       height: 100dvh;
@@ -35,31 +42,103 @@
       }
     }
 
-    /* Safe padding for modern devices with home bars (e.g., iPhones) */
+    /* Safe padding for modern devices */
     .safe-bottom-padding {
       padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     }
     
+    /* 4. Remove the boring scroll bar */
     ::-webkit-scrollbar {
-      width: 6px;
+      display: none;
     }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
+    * {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
     }
 
+    /* 3. Fluid/Smooth UI Animations */
     @keyframes slideInUp {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .msg-enter {
-      animation: slideInUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transform-origin: bottom center;
+    }
+
+    /* 1. Typing Indicator Dots Animation */
+    @keyframes typingDot {
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50% { transform: translateY(-3px); opacity: 1; }
+    }
+    .typing-dot { 
+      animation: typingDot 1.2s infinite ease-in-out; 
+    }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* 2. iOS Bubble Text Features */
+    .ios-bubble {
+      position: relative;
+      border-radius: 18px;
+      z-index: 1;
+    }
+    
+    .ios-bubble-me {
+      background-color: var(--bubble-me);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .ios-bubble-me::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      right: -8px;
+      height: 20px;
+      width: 20px;
+      background-color: var(--bubble-me);
+      border-bottom-left-radius: 16px;
+      z-index: -1;
+    }
+    .ios-bubble-me::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      right: -10px;
+      height: 20px;
+      width: 10px;
+      background-color: var(--bg-app);
+      border-bottom-left-radius: 10px;
+      z-index: -1;
+    }
+
+    .ios-bubble-other {
+      background-color: var(--bubble-other);
+      color: #1e293b;
+      border-bottom-left-radius: 4px;
+    }
+    .ios-bubble-other::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: -8px;
+      height: 20px;
+      width: 20px;
+      background-color: var(--bubble-other);
+      border-bottom-right-radius: 16px;
+      z-index: -1;
+    }
+    .ios-bubble-other::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: -10px;
+      height: 20px;
+      width: 10px;
+      background-color: var(--bg-app);
+      border-bottom-right-radius: 10px;
+      z-index: -1;
     }
   </style>
 </head>
@@ -67,7 +146,7 @@
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 translate-y-[-20px] bg-slate-900 text-white px-5 py-3 rounded-full shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-[100] flex items-center gap-3 font-medium text-xs sm:text-sm border border-slate-700 w-[90%] sm:w-auto justify-center">
-    <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-5 h-5 text-green-400 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
     </svg>
     <span id="toast-msg" class="truncate">Notification</span>
@@ -84,7 +163,7 @@
     </div>
 
     <!-- Instructions box for local running when config is missing -->
-    <div id="setup-instructions" class="hidden max-w-md w-full bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 text-center">
+    <div id="setup-instructions" class="hidden max-w-md w-full bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 text-center transition-all duration-500 transform hover:scale-[1.02]">
       <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mx-auto mb-4">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -93,7 +172,7 @@
       <h3 class="text-lg font-bold text-slate-800 mb-2">Firebase Setup Required</h3>
       <p class="text-sm text-slate-500 mb-4">To run this chat room on your local machine, configure your free Firebase project.</p>
       <div class="text-left text-xs bg-slate-50 p-4 rounded-lg font-mono text-slate-600 space-y-2 mb-4 overflow-x-auto">
-        <div>1. Create a project at <a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 underline">firebase.google.com</a>.</div>
+        <div>1. Create a project at <a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 underline hover:text-indigo-800 transition-colors">firebase.google.com</a>.</div>
         <div>2. Enable <strong class="text-slate-800">Anonymous Auth</strong> & <strong class="text-slate-800">Firestore Database</strong>.</div>
         <div>3. Paste your web app config inside the code.</div>
       </div>
@@ -103,12 +182,10 @@
 
   <!-- Landing View -->
   <div id="landing-view" class="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 text-center h-dynamic-screen overflow-y-auto" style="display: none;">
-    <div class="bg-white p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-[2rem] shadow-2xl border border-slate-100 max-w-md w-full relative overflow-hidden my-auto">
-      <!-- Decorative top border gradient -->
+    <div class="bg-white p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-[2rem] shadow-2xl border border-slate-100 max-w-md w-full relative overflow-hidden my-auto transition-all duration-500">
       <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
       
-      <!-- Icon -->
-      <div class="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5 sm:mb-6 text-indigo-600 shadow-inner transform rotate-3">
+      <div class="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5 sm:mb-6 text-indigo-600 shadow-inner transform rotate-3 transition-transform duration-300 hover:rotate-6 hover:scale-105">
         <svg class="w-8 h-8 sm:w-10 sm:h-10 transform -rotate-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
         </svg>
@@ -117,7 +194,7 @@
       <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 mb-2 sm:mb-3 tracking-tight">WhisperWire</h1>
       <p class="text-xs sm:text-sm text-slate-500 mb-6 sm:mb-8 leading-relaxed">Create a secure, anonymous chat room instantly. Share the link or the unique room code to chat in real time.</p>
       
-      <button id="create-chat-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 rounded-xl shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 focus:ring-4 focus:ring-indigo-100 outline-none text-sm sm:text-base">
+      <button id="create-chat-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus:ring-4 focus:ring-indigo-100 outline-none text-sm sm:text-base">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
         </svg>
@@ -130,9 +207,9 @@
         <div class="flex-grow border-t border-slate-200"></div>
       </div>
 
-      <form id="join-code-form" class="flex gap-2">
-        <input type="text" id="join-code-input" placeholder="Room Code" class="flex-grow bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-center font-mono font-semibold tracking-widest text-slate-700 placeholder-slate-400 uppercase outline-none transition-all text-sm sm:text-base" required maxlength="12">
-        <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 sm:px-5 rounded-xl transition-colors active:scale-95 flex items-center justify-center text-sm sm:text-base">
+      <form id="join-code-form" class="flex gap-2 group">
+        <input type="text" id="join-code-input" placeholder="Room Code" class="flex-grow bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-center font-mono font-semibold tracking-widest text-slate-700 placeholder-slate-400 uppercase outline-none transition-all duration-300 text-sm sm:text-base" required maxlength="12">
+        <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 sm:px-5 rounded-xl transition-all duration-300 active:scale-[0.96] flex items-center justify-center text-sm sm:text-base group-focus-within:bg-indigo-600">
           Join
         </button>
       </form>
@@ -143,24 +220,24 @@
   <div id="chat-view" class="flex flex-col h-chat-container max-w-4xl mx-auto w-full bg-white shadow-2xl sm:rounded-2xl sm:my-4 border border-slate-200/80 overflow-hidden relative" style="display: none;">
     
     <!-- Chat Header -->
-    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 p-3 sm:p-4 flex justify-between items-center z-10 sticky top-0 flex-shrink-0">
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 p-3 sm:p-4 flex justify-between items-center z-10 sticky top-0 flex-shrink-0 transition-all duration-300">
       <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-        <button id="leave-chat-btn" class="p-2 -ml-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors outline-none flex-shrink-0" title="Leave Chat">
+        <button id="leave-chat-btn" class="p-2 -ml-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all duration-200 outline-none flex-shrink-0 hover:scale-105 active:scale-95" title="Leave Chat">
           <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
           </svg>
         </button>
         <div class="flex flex-col min-w-0">
           <h2 class="font-bold text-sm sm:text-base text-slate-800 leading-tight truncate">Anonymous Session</h2>
-          <span class="text-[10px] sm:text-xs font-medium text-indigo-600 flex items-center gap-1 cursor-pointer hover:underline mt-0.5" id="header-code-display" title="Click to copy Room Code">
+          <span class="text-[10px] sm:text-xs font-medium text-indigo-600 flex items-center gap-1 cursor-pointer hover:text-indigo-800 transition-colors mt-0.5" id="header-code-display" title="Click to copy Room Code">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-indigo-500 animate-pulse flex-shrink-0"></span>
-            <span class="truncate">Room Code: <span id="current-code-text" class="font-mono font-bold uppercase">------</span></span>
+            <span class="truncate">Room Code: <span id="current-code-text" class="font-mono font-bold uppercase transition-all duration-200">------</span></span>
           </span>
         </div>
       </div>
       
       <div class="flex gap-2 flex-shrink-0">
-        <button id="copy-link-btn" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg flex items-center gap-1.5 sm:gap-2 transition-colors border border-indigo-100 shadow-sm outline-none text-xs sm:text-sm" title="Copy Invite Link">
+        <button id="copy-link-btn" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg flex items-center gap-1.5 sm:gap-2 transition-all duration-200 border border-indigo-100 shadow-sm outline-none text-xs sm:text-sm active:scale-95 hover:shadow">
           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
           </svg>
@@ -170,18 +247,27 @@
       </div>
     </header>
 
-    <!-- Message List Area -->
-    <div id="messages-container" class="flex-grow overflow-y-auto p-3 sm:p-6 flex flex-col gap-2.5 bg-slate-50/50">
-      <!-- Messages will be injected here via JavaScript -->
+    <!-- Message List Area (Changed background to match tail mask strictly) -->
+    <div id="messages-container" class="flex-grow overflow-y-auto p-3 sm:p-6 flex flex-col bg-slate-50 relative scroll-smooth">
+      <div id="messages-list" class="flex flex-col gap-1 pb-2"></div>
+      
+      <!-- Typing Indicator Container -->
+      <div id="typing-container" class="hidden flex w-full justify-start mt-2 transition-opacity duration-300 opacity-0 mb-4">
+         <div class="ios-bubble ios-bubble-other px-3.5 py-3 flex items-center gap-1.5 shadow-sm ml-1 transform origin-bottom-left transition-all">
+            <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+            <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+            <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+         </div>
+      </div>
     </div>
 
     <!-- Message Input Form -->
-    <form id="message-form" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex gap-2 sm:gap-3 items-center z-10 safe-bottom-padding flex-shrink-0">
-      <div class="flex-grow relative">
-        <input type="text" id="message-input" autocomplete="off" placeholder="Type your message..." class="w-full bg-slate-100 border border-transparent focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-full pl-4 pr-10 sm:pl-5 sm:pr-12 py-2.5 sm:py-3.5 transition-all outline-none text-sm sm:text-base text-slate-700 placeholder-slate-400" required maxlength="1000">
+    <form id="message-form" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex gap-2 sm:gap-3 items-center z-10 safe-bottom-padding flex-shrink-0 transition-all duration-300">
+      <div class="flex-grow relative group">
+        <input type="text" id="message-input" autocomplete="off" placeholder="Type your message..." class="w-full bg-slate-100 border border-transparent focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-full pl-4 pr-10 sm:pl-5 sm:pr-12 py-2.5 sm:py-3.5 transition-all duration-300 outline-none text-sm sm:text-base text-slate-700 placeholder-slate-400" required maxlength="1000">
       </div>
-      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-2.5 sm:p-3 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center transition-transform transform active:scale-95 flex-shrink-0 shadow-md outline-none">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-2.5 sm:p-3 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center transition-all duration-200 transform active:scale-90 flex-shrink-0 shadow-md hover:shadow-lg outline-none group-focus-within:ring-2 group-focus-within:ring-indigo-300 group-focus-within:ring-offset-2">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5 ml-0.5 transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
         </svg>
       </button>
@@ -193,7 +279,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // ==========================================
     // LOCAL CONFIGURATION (Fallback config)
@@ -237,6 +323,8 @@
     let currentUser = null;
     let currentRoom = null;
     let unsubscribe = null;
+    let typingUnsubscribe = null;
+    let typingTimeout = null;
 
     // DOM Elements Reference
     const views = {
@@ -247,6 +335,8 @@
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toast-msg');
     const messagesContainer = document.getElementById('messages-container');
+    const messagesList = document.getElementById('messages-list');
+    const typingContainer = document.getElementById('typing-container');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     const createChatBtn = document.getElementById('create-chat-btn');
@@ -262,9 +352,19 @@
       views.landing.style.display = 'none';
       views.chat.style.display = 'none';
 
-      if (viewName === 'loading') views.loading.style.display = 'flex';
-      if (viewName === 'landing') views.landing.style.display = 'flex';
-      if (viewName === 'chat') views.chat.style.display = 'flex';
+      if (viewName === 'loading') {
+        views.loading.style.display = 'flex';
+      }
+      if (viewName === 'landing') {
+        views.landing.style.display = 'flex';
+        views.landing.style.opacity = '0';
+        setTimeout(() => views.landing.style.opacity = '1', 50);
+      }
+      if (viewName === 'chat') {
+        views.chat.style.display = 'flex';
+        views.chat.style.opacity = '0';
+        setTimeout(() => views.chat.style.opacity = '1', 50);
+      }
     }
 
     function showToast(msg) {
@@ -421,17 +521,22 @@
       currentRoom = roomId.toUpperCase();
       currentCodeText.textContent = currentRoom;
       showView('chat');
-      messagesContainer.innerHTML = '';
+      
+      messagesList.innerHTML = '';
+      typingContainer.classList.add('hidden');
+      typingContainer.classList.remove('opacity-100');
       
       setTimeout(() => messageInput.focus(), 100);
 
       // RULE 1: STRICT PATH compliance. We always write to:
       // `/artifacts/{appId}/public/data/{collectionName}`
-      // Let's use 'messages' as the static collection name, and filter dynamically in JS.
       const roomCol = collection(db, 'artifacts', APP_ID, 'public', 'data', 'messages');
 
       if (unsubscribe) {
         unsubscribe();
+      }
+      if (typingUnsubscribe) {
+        typingUnsubscribe();
       }
 
       // Read snapshot of total messages, filter locally to avoid indexing requirements (Rule 2)
@@ -439,7 +544,6 @@
         const msgs = [];
         snapshot.forEach(doc => {
           const data = doc.data();
-          // Filter dynamically by room attribute
           if (data && data.room === currentRoom) {
             msgs.push({ id: doc.id, ...data });
           }
@@ -452,15 +556,42 @@
         console.error("Snapshot read error:", err);
         showToast("Lost connection to chat stream.");
       });
+
+      // Typing Indicator Listener
+      const typingCol = collection(db, 'artifacts', APP_ID, 'public', 'data', 'typing');
+      typingUnsubscribe = onSnapshot(typingCol, (snapshot) => {
+        let someoneTyping = false;
+        const now = Date.now();
+        snapshot.forEach(d => {
+          const data = d.data();
+          if (data.room === currentRoom && data.uid !== currentUser.uid && data.isTyping) {
+            // Consider them typing if updated in the last 4 seconds
+            if (now - data.lastUpdated < 4000) {
+              someoneTyping = true;
+            }
+          }
+        });
+
+        if (someoneTyping) {
+          typingContainer.classList.remove('hidden');
+          setTimeout(() => typingContainer.classList.remove('opacity-0'), 10);
+          messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
+        } else {
+          typingContainer.classList.add('opacity-0');
+          setTimeout(() => typingContainer.classList.add('hidden'), 300);
+        }
+      }, (err) => {
+        console.warn("Typing read error:", err);
+      });
     }
 
     function renderMessages(msgs) {
-      messagesContainer.innerHTML = '';
+      messagesList.innerHTML = '';
       
       if (msgs.length === 0) {
-        messagesContainer.innerHTML = `
+        messagesList.innerHTML = `
           <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-4 msg-enter py-12">
-            <div class="w-14 h-14 sm:w-16 sm:h-16 bg-slate-100 rounded-full flex items-center justify-center">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 bg-slate-100 rounded-full flex items-center justify-center shadow-inner">
               <svg class="w-6 h-6 sm:w-8 sm:h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
             </div>
             <p class="font-medium text-center px-4 text-xs sm:text-sm">Room is empty. Copy the code or link to invite someone!</p>
@@ -470,20 +601,34 @@
       }
 
       let lastUid = null;
-      msgs.forEach(msg => {
+      msgs.forEach((msg, index) => {
         const isMe = msg.uid === currentUser.uid;
-        const marginClass = (lastUid !== null && lastUid !== msg.uid) ? 'mt-3' : 'mt-1';
+        
+        // Grouping logic for the iOS Bubbles tail
+        const nextMsg = msgs[index + 1];
+        const isLastInGroup = !nextMsg || nextMsg.uid !== msg.uid;
+        const marginClass = (lastUid !== null && lastUid !== msg.uid) ? 'mt-4' : 'mt-[2px]';
         lastUid = msg.uid;
 
         const wrapper = document.createElement('div');
-        wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} msg-enter ${marginClass}`;
+        wrapper.className = `flex w-full ${isMe ? 'justify-end pr-1' : 'justify-start pl-1'} msg-enter ${marginClass}`;
 
         const bubble = document.createElement('div');
-        bubble.className = `max-w-[85%] md:max-w-[70%] px-3.5 py-2 sm:px-4 sm:py-2.5 relative text-xs sm:text-[15px] leading-relaxed shadow-sm flex flex-col gap-1 ${
-          isMe
-            ? 'bg-indigo-600 text-white rounded-2xl rounded-br-sm'
-            : 'bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-bl-sm'
-        }`;
+        
+        // Apply different styling if it's the last in a consecutive group (adding the tail)
+        let baseBubbleClasses = `max-w-[85%] md:max-w-[70%] px-3.5 py-2 sm:px-4 sm:py-2.5 relative text-sm sm:text-[15px] leading-relaxed flex flex-col gap-1 transition-all `;
+        
+        if (isLastInGroup) {
+           baseBubbleClasses += `ios-bubble shadow-sm ${isMe ? 'ios-bubble-me' : 'ios-bubble-other'}`;
+        } else {
+           // Not the last in group -> rounded pill shape without the tail
+           baseBubbleClasses += `rounded-[18px] ${isMe ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-800'}`;
+           // slightly flatten the joining sides for grouped blocks
+           if (isMe) { baseBubbleClasses += ' rounded-br-md'; } 
+           else { baseBubbleClasses += ' rounded-bl-md'; }
+        }
+
+        bubble.className = baseBubbleClasses;
 
         const textEl = document.createElement('div');
         textEl.className = 'whitespace-pre-wrap break-words';
@@ -491,14 +636,14 @@
         bubble.appendChild(textEl);
 
         const metaEl = document.createElement('div');
-        metaEl.className = `text-[9px] sm:text-[10px] ${isMe ? 'text-indigo-200 text-right' : 'text-slate-400'}`;
+        metaEl.className = `text-[9px] sm:text-[10px] opacity-80 mt-0.5 ${isMe ? 'text-indigo-100 text-right' : 'text-slate-500'}`;
         const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         const shortenedUid = (msg.uid || '').substring(0, 5).toUpperCase();
         metaEl.textContent = `User ${shortenedUid} • ${timestamp}`;
         bubble.appendChild(metaEl);
 
         wrapper.appendChild(bubble);
-        messagesContainer.appendChild(wrapper);
+        messagesList.appendChild(wrapper);
       });
 
       setTimeout(() => {
@@ -523,6 +668,11 @@
           timestamp: Date.now(),
           room: currentRoom 
         });
+
+        // Clear typing indicator immediately upon sending
+        const typingDoc = doc(db, 'artifacts', APP_ID, 'public', 'data', 'typing', `${currentRoom}_${currentUser.uid}`);
+        await setDoc(typingDoc, { room: currentRoom, uid: currentUser.uid, isTyping: false, lastUpdated: Date.now() });
+        
       } catch (err) {
         console.error("Message send failed:", err);
         showToast("Unable to send message.");
@@ -563,6 +713,23 @@
       }
     }
 
+    // Typing Interaction Event Listener
+    messageInput.addEventListener('input', () => {
+      if (!currentUser || !currentRoom) return;
+      
+      const typingDoc = doc(db, 'artifacts', APP_ID, 'public', 'data', 'typing', `${currentRoom}_${currentUser.uid}`);
+      
+      // Update typing state to true
+      setDoc(typingDoc, { room: currentRoom, uid: currentUser.uid, isTyping: true, lastUpdated: Date.now() }).catch(()=> {});
+
+      clearTimeout(typingTimeout);
+      
+      // Auto-turn off typing indicator if idle for 2.5s
+      typingTimeout = setTimeout(() => {
+        setDoc(typingDoc, { room: currentRoom, uid: currentUser.uid, isTyping: false, lastUpdated: Date.now() }).catch(()=> {});
+      }, 2500);
+    });
+
     // Interactive UI Event Listeners
     createChatBtn.addEventListener('click', () => {
       createRoom();
@@ -581,6 +748,17 @@
         unsubscribe();
         unsubscribe = null;
       }
+      if (typingUnsubscribe) {
+        typingUnsubscribe();
+        typingUnsubscribe = null;
+      }
+      
+      // Clear own typing state upon leaving
+      if (currentUser && currentRoom) {
+         const typingDoc = doc(db, 'artifacts', APP_ID, 'public', 'data', 'typing', `${currentRoom}_${currentUser.uid}`);
+         setDoc(typingDoc, { room: currentRoom, uid: currentUser.uid, isTyping: false, lastUpdated: Date.now() }).catch(()=> {});
+      }
+
       currentRoom = null;
       updateURLState(null);
       showView('landing');
