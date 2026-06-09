@@ -1,6 +1,0 @@
-{
-  "name": "WhisperWire",
-  "description": "Apple-style iMessage secure chat application with modern Liquid Glass styling.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
