@@ -118,12 +118,10 @@ function showToast(message, type = 'info') {
     toastIcon.innerHTML = `<i class="fa-solid fa-circle-info text-indigo-400"></i>`;
   }
   
-  toast.classList.remove('opacity-0', '-translate-y-20');
-  toast.classList.add('opacity-100', 'translate-y-0');
+  toast.classList.add('show');
   
   setTimeout(() => {
-    toast.classList.remove('opacity-100', 'translate-y-0');
-    toast.classList.add('opacity-0', '-translate-y-20');
+    toast.classList.remove('show');
   }, 3500);
 }
 
@@ -148,17 +146,21 @@ function updateURLState(code) {
 function showView(viewName) {
   usernameView.classList.add('hidden');
   landingView.classList.add('hidden');
-  chatView.classList.add('hidden');
+  chatView.style.display = 'none';
+  chatView.classList.remove('active');
 
   if (viewName === 'username') {
     usernameView.classList.remove('hidden');
+    usernameView.classList.add('active');
   } else if (viewName === 'landing') {
     landingView.classList.remove('hidden');
+    landingView.classList.add('active');
     userNameSpan.textContent = myUsername;
     userAvatarSpan.textContent = selectedAvatar;
     renderRoomHistoryUI();
   } else if (viewName === 'chat') {
-    chatView.classList.remove('hidden');
+    chatView.style.display = 'flex';
+    chatView.classList.add('active');
   }
 }
 
@@ -250,27 +252,23 @@ function renderRoomHistoryUI() {
   history.forEach(item => {
     const isExpired = item.expiresAt && Date.now() > item.expiresAt;
     const div = document.createElement('div');
-    div.className = `flex items-center justify-between p-3 rounded-xl ${
-      isExpired 
-        ? 'bg-slate-950/20 border border-slate-900/40 opacity-60' 
-        : 'bg-slate-900/40 border border-slate-800/80 hover:border-indigo-500/40 transition-all cursor-pointer'
-    }`;
+    div.className = `history-item${isExpired ? ' expired' : ''}`;
     let statusText = '';
     if (isExpired) {
-      statusText = '<span class="text-[10px] bg-rose-600/20 border border-rose-500/30 text-rose-400 px-1.5 py-0.5 rounded">Expired</span>';
+      statusText = '<span class="history-badge-expired">Expired</span>';
     } else if (item.expiresAt) {
       const diffMs = item.expiresAt - Date.now();
       const diffHrs = Math.ceil(diffMs / (1000 * 60 * 60));
-      statusText = `<span class="text-[10px] text-slate-400">Expires in ${diffHrs}h</span>`;
+      statusText = `<span class="history-expiry">Expires in ${diffHrs}h</span>`;
     }
     div.innerHTML = `
-      <div class="leading-tight min-w-0 flex-1 pr-3 text-left">
-        <div class="text-sm font-semibold text-slate-200 truncate">${escapeHTML(item.roomName)}</div>
-        <div class="text-[10px] text-slate-500 font-mono font-bold">${item.roomId}</div>
+      <div style="min-width:0;flex:1;padding-right:12px">
+        <div class="history-name">${escapeHTML(item.roomName)}</div>
+        <div class="history-code">${item.roomId}</div>
       </div>
-      <div class="flex items-center gap-2">
+      <div style="display:flex;align-items:center;gap:8px">
         ${statusText}
-        ${!isExpired ? `<i class="fa-solid fa-arrow-right text-[11px] text-indigo-400"></i>` : ''}
+        ${!isExpired ? `<i class="fa-solid fa-arrow-right" style="font-size:11px;color:var(--blue)"></i>` : ''}
       </div>
     `;
     if (!isExpired) {
@@ -289,9 +287,7 @@ function buildAvatarList() {
   AVATARS.forEach(emoji => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = `w-12 h-12 text-2xl flex items-center justify-center rounded-xl transition-all border ${
-      selectedAvatar === emoji ? 'border-indigo-500 bg-indigo-600/30 font-bold scale-110 shadow-lg shadow-indigo-600/10' : 'border-slate-800 bg-slate-950/40 hover:bg-slate-900'
-    }`;
+    btn.className = `avatar-btn${selectedAvatar === emoji ? ' selected' : ''}`;
     btn.textContent = emoji;
     btn.addEventListener('click', () => {
       selectedAvatar = emoji;
@@ -447,14 +443,14 @@ function updateActiveUsersUI(usersList) {
   usersList.forEach(user => {
     const isMe = user.uid === currentUser?.uid;
     const div = document.createElement('div');
-    div.className = `flex items-center justify-between p-2.5 rounded-xl transition-all ${isMe ? 'bg-indigo-600/10 border border-indigo-500/20' : 'bg-slate-900/40'}`;
+    div.className = `participant-row${isMe ? ' is-me' : ''}`;
     
     div.innerHTML = `
-      <div class="flex items-center gap-2.5 min-w-0">
-        <span class="text-xl shrink-0">${user.avatar || '👤'}</span>
-        <span class="text-sm font-medium text-slate-200 truncate ${isMe ? 'font-bold' : ''}">${user.username} ${isMe ? '(You)' : ''}</span>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <span class="participant-avatar">${user.avatar || '👤'}</span>
+        <span class="participant-name${isMe ? ' bold' : ''}">${user.username}${isMe ? ' (You)' : ''}</span>
       </div>
-      <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+      <span class="participant-online-dot"></span>
     `;
     participantsList.appendChild(div);
   });
@@ -480,13 +476,13 @@ function listenToTypingStates(roomCode) {
       typingIndicator.innerHTML = '';
     } else if (activeTypers.length === 1) {
       typingIndicator.innerHTML = `
-        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></span>
-        <span>${activeTypers[0]} is drafting...</span>
+        <span class="typing-dot"></span>
+        <span>${activeTypers[0]} is drafting…</span>
       `;
     } else {
       typingIndicator.innerHTML = `
-        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></span>
-        <span>Multiple users drafting...</span>
+        <span class="typing-dot"></span>
+        <span>Multiple users drafting…</span>
       `;
     }
   });
@@ -729,8 +725,7 @@ function startEdit(msgId, text) {
   messageInput.focus();
   autoResizeInput();
   
-  messageInput.classList.add('border-amber-500');
-  messageInput.classList.remove('border-slate-800');
+  messageInput.classList.add('editing');
   showToast("Editing message...", "info");
 }
 
@@ -738,8 +733,7 @@ function cancelEdit() {
   editTarget = null;
   messageInput.value = '';
   autoResizeInput();
-  messageInput.classList.remove('border-amber-500');
-  messageInput.classList.add('border-slate-800');
+  messageInput.classList.remove('editing');
 }
 
 // Clipboard Copy
@@ -783,9 +777,9 @@ window.scrollToMessage = function(id) {
   const el = document.querySelector(`[data-msg-id="${id}"]`);
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.classList.add('bg-indigo-600/20');
+    el.classList.add('highlight-flash');
     setTimeout(() => {
-      el.classList.remove('bg-indigo-600/20');
+      el.classList.remove('highlight-flash');
     }, 1500);
   } else {
     showToast("Original message not found in room context", "info");
@@ -912,8 +906,8 @@ function renderMessages(list) {
   
   if (list.length === 0) {
     messagesList.innerHTML = `
-      <div class="text-center py-8 text-slate-500 text-sm italic">
-        No whispers here yet. Write a message below to broadcast.
+      <div style="text-align:center;padding:32px 0;color:var(--text-tertiary);font-size:13px;font-style:italic">
+        No whispers yet. Write the first message below.
       </div>
     `;
     return;
@@ -927,7 +921,7 @@ function renderMessages(list) {
     }
 
     const msgBlock = document.createElement('div');
-    msgBlock.className = `msg-bubble-container flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 w-full max-w-[85%] ${isMe ? 'ml-auto' : 'mr-auto'} relative transition-colors duration-500 rounded-xl p-1`;
+    msgBlock.className = `msg-bubble-container ${isMe ? 'from-me' : 'from-them'}`;
     msgBlock.dataset.msgId = msg.id;
 
     const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -935,9 +929,9 @@ function renderMessages(list) {
     let replyHtml = '';
     if (msg.replyToId) {
       replyHtml = `
-        <div class="reply-quote bg-slate-950/60 border-l-4 border-indigo-500 rounded px-3 py-1.5 mb-1.5 cursor-pointer text-left block w-full max-w-full">
-          <div class="text-[10px] font-bold text-indigo-400">${msg.replyToUser}</div>
-          <div class="text-[11px] text-slate-400 truncate">${msg.replyToText}</div>
+        <div class="reply-quote">
+          <div class="reply-quote-user">${msg.replyToUser}</div>
+          <div class="reply-quote-text">${msg.replyToText}</div>
         </div>
       `;
     }
@@ -958,51 +952,49 @@ function renderMessages(list) {
       }
     }
 
-    const editedHtml = msg.edited ? `<span class="text-[9px] text-slate-500 font-medium select-none ml-1">(edited)</span>` : '';
+    const editedHtml = msg.edited ? `<span class="edited-tag">(edited)</span>` : '';
 
     msgBlock.innerHTML = `
       ${!isMe ? `
-        <div class="flex items-center gap-1.5 px-1">
-          <span class="text-sm">${msg.avatar || '👤'}</span>
-          <span class="text-xs font-semibold ${senderColor}">${msg.username}</span>
+        <div class="bubble-sender-row">
+          <span style="font-size:14px">${msg.avatar || '👤'}</span>
+          <span class="bubble-sender-name ${senderColor}">${msg.username}</span>
         </div>
       ` : ''}
       
-      <div class="relative w-full flex ${isMe ? 'justify-end' : 'justify-start'} items-center group">
-        <div class="reply-indicator absolute left-[-35px] text-indigo-400 opacity-0 pointer-events-none">
+      <div style="position:relative;width:100%;display:flex;${isMe ? 'justify-content:flex-end' : 'justify-content:flex-start'};align-items:center">
+        <div class="reply-indicator">
           <i class="fa-solid fa-reply"></i>
         </div>
         
-        <div class="swipeable-message rounded-2xl px-4 py-2.5 shadow-md flex flex-col min-w-[80px] message-bubble-wrapper ${
-          isMe 
-            ? 'bg-indigo-600 text-white rounded-tr-none' 
-            : 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700/50'
-        }">
+        <div class="swipeable-message msg-bubble ${isMe ? 'bubble-mine' : 'bubble-theirs'} message-bubble-wrapper">
           ${replyHtml}
-          <p class="text-sm whitespace-pre-wrap break-words overflow-hidden w-full">${escapeHTML(msg.text)}</p>
-          <div class="flex justify-end items-center mt-1 select-none">
-            <span class="text-[9px] ${isMe ? 'text-indigo-200/80' : 'text-slate-400'} font-medium">${formattedTime}</span>
+          <p class="bubble-text">${escapeHTML(msg.text)}</p>
+          <div class="bubble-meta">
+            <span class="bubble-time">${formattedTime}</span>
             ${editedHtml}
             ${receiptHtml}
           </div>
         </div>
       </div>
       
-      <div class="message-actions-trigger flex gap-2 items-center px-1">
-        <button type="button" class="btn-reply message-action-btn" title="Reply">
-          <i class="fa-solid fa-reply"></i>
-        </button>
-        <button type="button" class="btn-copy message-action-btn" title="Copy">
-          <i class="fa-solid fa-copy"></i>
-        </button>
-        ${isMe ? `
-          <button type="button" class="btn-edit message-action-btn" title="Edit">
-            <i class="fa-solid fa-pen"></i>
+      <div class="message-actions-trigger">
+        <div class="actions-row">
+          <button type="button" class="btn-reply message-action-btn" title="Reply">
+            <i class="fa-solid fa-reply"></i> Reply
           </button>
-          <button type="button" class="btn-delete message-action-btn" title="Delete">
-            <i class="fa-solid fa-trash text-rose-400"></i>
+          <button type="button" class="btn-copy message-action-btn" title="Copy">
+            <i class="fa-solid fa-copy"></i> Copy
           </button>
-        ` : ''}
+          ${isMe ? `
+            <button type="button" class="btn-edit message-action-btn" title="Edit">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button type="button" class="btn-delete message-action-btn" title="Delete" style="color:var(--rose)">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          ` : ''}
+        </div>
       </div>
     `;
 
@@ -1122,13 +1114,11 @@ leaveChatBtn.addEventListener('click', leaveCurrentRoom);
 
 // Sidebar Mobile Drawer Event Observers
 toggleParticipantsBtn.addEventListener('click', () => {
-  participantsSidebar.classList.remove('hidden');
-  participantsSidebar.classList.add('flex', 'absolute');
+  participantsSidebar.classList.add('mobile-open');
 });
 
 closeParticipantsBtn.addEventListener('click', () => {
-  participantsSidebar.classList.add('hidden');
-  participantsSidebar.classList.remove('flex', 'absolute');
+  participantsSidebar.classList.remove('mobile-open');
 });
 
 // Detect back or refresh events
